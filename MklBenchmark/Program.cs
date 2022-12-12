@@ -37,7 +37,7 @@ internal class Program
 
 public class MKLTest : ManualConfig
 {
-    const int Size = 40000;
+    const int Size = 400;
 
     [Benchmark]
     public void DotNetASin()
@@ -127,6 +127,16 @@ public class MKLTest : ManualConfig
         return result;
     }
 
+    public Span<Complex> MKLMultiplyComplex2(VmlAccuracy accuracy)
+    {
+        using var spanOwner = SpanOwner<Complex>.Allocate(Size);
+        var result = spanOwner.Span;
+
+        MKLNativeMethods.Multiply(CValues1, CValues2, result, accuracy);
+
+        return result;
+    }
+
     [Benchmark]
     public void MKLMultiplyNativeComplex()
     {
@@ -158,6 +168,48 @@ public class MKLTest : ManualConfig
         var result = spanOwner.Span;
 
         MKLNativeMethods.Multiply(Values1, Values2, result, accuracy);
+    }
+
+    [Benchmark]
+    public void DotNetAdd()
+    {
+        using var spanOwner = SpanOwner<double>.Allocate(Size);
+        var result = spanOwner.Span;
+
+        for (int i = 0; i < Size; i++)
+        {
+            result[i] = Values1[i] + Values2[i];
+        }
+    }
+
+    [Benchmark]
+    public void MKLAddDouble()
+    {
+        using var spanOwner = SpanOwner<double>.Allocate(Size);
+        var result = spanOwner.Span;
+
+        MKLNativeMethods.Add(Values1, Values2, result);
+    }
+
+    [Benchmark]
+    public void DotNetSubtract()
+    {
+        using var spanOwner = SpanOwner<double>.Allocate(Size);
+        var result = spanOwner.Span;
+
+        for (int i = 0; i < Size; i++)
+        {
+            result[i] = Values1[i] - Values2[i];
+        }
+    }
+
+    [Benchmark]
+    public void MKLSubtractDouble()
+    {
+        using var spanOwner = SpanOwner<double>.Allocate(Size);
+        var result = spanOwner.Span;
+
+        MKLNativeMethods.Subtract(Values1, Values2, result);
     }
 
     [GlobalSetup]
