@@ -58,9 +58,9 @@ public unsafe static partial class MKLNativeMethods
     public unsafe static extern void vzCos(int n, Complex* a, Complex* r);
 #endif
 
-#endregion
+    #endregion
 
-#region ASin
+    #region ASin
 
     public static void Asin(ReadOnlySpan<double> a, Span<double> r)
     {
@@ -111,11 +111,10 @@ public unsafe static partial class MKLNativeMethods
 #endif
 
 
-#endregion
+    #endregion
 
-#region Multiply
+    #region Multiply
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<Complex> a, ReadOnlySpan<Complex> b, Span<Complex> r, VmlAccuracy accuracy = VmlAccuracy.High)
     {
         Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
@@ -137,7 +136,6 @@ public unsafe static partial class MKLNativeMethods
 #endif
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<MKLComplex16> a, ReadOnlySpan<MKLComplex16> b, Span<MKLComplex16> r)
     {
         Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
@@ -155,7 +153,6 @@ public unsafe static partial class MKLNativeMethods
 #endif
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Multiply(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy accuracy = VmlAccuracy.High)
     {
         Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
@@ -169,6 +166,25 @@ public unsafe static partial class MKLNativeMethods
         fixed (double* pR = r)
         {
             vmdMul(a.Length, pA, pB, pR, accuracy);
+        }
+#endif
+    }
+
+    public static void Multiply(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, int increment, VmlAccuracy accuracy = VmlAccuracy.High)
+    {
+        Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
+        Guard.IsGreaterThanOrEqualTo(r.Length, a.Length);
+
+        int len = (a.Length + 1) / increment;
+
+#if NET7_0_OR_GREATER
+        vmdMulI(a.Length, a, increment, b, increment, r, increment, accuracy);
+#else
+        fixed (double* pA = a)
+        fixed (double* pB = b)
+        fixed (double* pR = r)
+        {
+            vmdMulI(a.Length, pA, increment, pB, increment, pR, increment, accuracy);
         }
 #endif
     }
@@ -189,6 +205,10 @@ public unsafe static partial class MKLNativeMethods
     [LibraryImport("mkl_rt.2.dll")]
     [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static partial void vmdMul(int n, ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy mode);
+
+    [LibraryImport("mkl_rt.2.dll")]
+    [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static partial void vmdMulI(int n, ReadOnlySpan<double> a, int inca, ReadOnlySpan<double> b, int incb, Span<double> r, int incr, VmlAccuracy mode);
 #else
     [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void vzMul(int n, Complex* a, Complex* b, Complex* r);
@@ -201,16 +221,19 @@ public unsafe static partial class MKLNativeMethods
 
     [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void vdMul(int n, double* a, double* b, double* r);
-    
+
     [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void vmdMul(int n, double* a, double* b, double* r, VmlAccuracy mode);
+
+    [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern void vmdMulI(int n, double* a, int inca, double* b, int incb, double* r, int incr, VmlAccuracy mode);
 #endif
 
-#endregion
+    #endregion
 
     // TODO: add Div/Sub/Add/Exp/Pow/Sin... etc
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    #region Add
     public static void Add(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy accuracy = VmlAccuracy.High)
     {
         Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
@@ -228,16 +251,43 @@ public unsafe static partial class MKLNativeMethods
 #endif
     }
 
+    public static void Add(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, int increment, VmlAccuracy accuracy = VmlAccuracy.High)
+    {
+        Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
+        Guard.IsGreaterThanOrEqualTo(r.Length, a.Length);
+
+        int len = (a.Length + 1) / increment;
+
+#if NET7_0_OR_GREATER
+        vmdAddI(len, a, increment, b, increment, r, increment, accuracy);
+#else
+        fixed (double* pA = a)
+        fixed (double* pB = b)
+        fixed (double* pR = r)
+        {
+            vmdAddI(a.Length, pA, increment, pB, increment, pR, increment, accuracy);
+        }
+#endif
+    }
+
 #if NET7_0_OR_GREATER
     [LibraryImport("mkl_rt.2.dll")]
     [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static partial void vmdAdd(int n, ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy mode);
+
+    [LibraryImport("mkl_rt.2.dll")]
+    [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static partial void vmdAddI(int n, ReadOnlySpan<double> a, int inca, ReadOnlySpan<double> b, int incb, Span<double> y, int incy, VmlAccuracy mode);
 #else
     [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void vmdAdd(int n, double* a, double* b, double* r, VmlAccuracy mode);
-#endif
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern void vmdAddI(int n, double* a, int inca, double* b, int incb, double* y, int incy, VmlAccuracy mode);
+#endif
+    #endregion
+
+    #region Subtract
     public static void Subtract(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy accuracy = VmlAccuracy.High)
     {
         Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
@@ -255,15 +305,41 @@ public unsafe static partial class MKLNativeMethods
 #endif
     }
 
+    public static void Subtract(ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, int increment, VmlAccuracy accuracy = VmlAccuracy.High)
+    {
+        Guard.IsGreaterThanOrEqualTo(b.Length, a.Length);
+        Guard.IsGreaterThanOrEqualTo(r.Length, a.Length);
+        
+        int len = (a.Length + 1) / increment;
+
+#if NET7_0_OR_GREATER
+        vmdSubI(len, a, increment, b, increment, r, increment, accuracy);
+#else
+        fixed (double* pA = a)
+        fixed (double* pB = b)
+        fixed (double* pR = r)
+        {
+            vmdSubI(a.Length, pA, increment, pB, increment, pR, increment, accuracy);
+        }
+#endif
+    }
+
 #if NET7_0_OR_GREATER
     [LibraryImport("mkl_rt.2.dll")]
     [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
     private static partial void vmdSub(int n, ReadOnlySpan<double> a, ReadOnlySpan<double> b, Span<double> r, VmlAccuracy mode);
+
+    [LibraryImport("mkl_rt.2.dll")]
+    [UnmanagedCallConv(CallConvs = new[] { typeof(CallConvCdecl) })]
+    private static partial void vmdSubI(int n, ReadOnlySpan<double> a, int inca, ReadOnlySpan<double> b, int incb, Span<double> r, int incr, VmlAccuracy mode);
 #else
     [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
     public static extern void vmdSub(int n, double* a, double* b, double* r, VmlAccuracy mode);
-#endif
 
+    [DllImport("mkl_rt.2.dll", CallingConvention = CallingConvention.Cdecl, ExactSpelling = true)]
+    public static extern void vmdSubI(int n, double* a, int inca, double* b, int incb, double* r, int incr, VmlAccuracy mode);
+#endif
+    #endregion
 }
 
 public struct MKLComplex16

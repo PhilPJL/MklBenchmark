@@ -8,30 +8,9 @@ namespace MklBenchmark;
 
 internal class Program
 {
-    static void Main(string[] args)
+    static void Main()
     {
         BenchmarkRunner.Run<MKLTest>();
-
-        /*        MKLTest.BenchmarkSetup();
-
-                var test = new MKLTest();
-
-                var r1 = test.DotNetMultiplyComplex().ToArray();
-                var r2 = test.MKLMultiplyComplex(VmlAccuracy.High).ToArray();
-                var r3 = test.MKLMultiplyComplex(VmlAccuracy.Performance).ToArray();
-
-                var ms = r1.Zip(r2, r3)
-                    .Select(z => new { r1 = z.First, r2 = z.Second, r3 = z.Third })
-                    .Select(z => new { m1 = z.r2 - z.r1, m2 = z.r3 - z.r1 });
-
-                foreach(var m in ms.Where(m1 => m1.m1 != 0 || m1.m2 != 0))
-                {
-                    Console.WriteLine($"{m.m1}, {m.m2}");
-                }
-
-                Console.WriteLine(ms.Where(m1 => m1.m1 != 0 || m1.m2 != 0).Count());
-                Console.WriteLine(ms.Where(m1 => m1.m1 != 0).Count());
-                Console.WriteLine(ms.Where(m1 => m1.m2 != 0).Count());*/
     }
 }
 
@@ -100,7 +79,7 @@ public class MKLTest : ManualConfig
 
 
     [Benchmark]
-    public Span<Complex> DotNetMultiplyComplex()
+    public void DotNetMultiplyComplex()
     {
         using var spanOwner = SpanOwner<Complex>.Allocate(Size);
         var result = spanOwner.Span;
@@ -109,32 +88,18 @@ public class MKLTest : ManualConfig
         {
             result[i] = CValues1[i] * CValues2[i];
         }
-
-        return result;
     }
 
     [Benchmark]
     [Arguments(VmlAccuracy.Low)]
     [Arguments(VmlAccuracy.High)]
     [Arguments(VmlAccuracy.Performance)]
-    public Span<Complex> MKLMultiplyComplex(VmlAccuracy accuracy)
+    public void MKLMultiplyComplex(VmlAccuracy accuracy)
     {
         using var spanOwner = SpanOwner<Complex>.Allocate(Size);
         var result = spanOwner.Span;
 
         MKLNativeMethods.Multiply(CValues1, CValues2, result, accuracy);
-
-        return result;
-    }
-
-    public Span<Complex> MKLMultiplyComplex2(VmlAccuracy accuracy)
-    {
-        using var spanOwner = SpanOwner<Complex>.Allocate(Size);
-        var result = spanOwner.Span;
-
-        MKLNativeMethods.Multiply(CValues1, CValues2, result, accuracy);
-
-        return result;
     }
 
     [Benchmark]
@@ -171,7 +136,7 @@ public class MKLTest : ManualConfig
     }
 
     [Benchmark]
-    public void DotNetAdd()
+    public void DotNetAddDouble()
     {
         using var spanOwner = SpanOwner<double>.Allocate(Size);
         var result = spanOwner.Span;
